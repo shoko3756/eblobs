@@ -42,4 +42,14 @@ cd eblobs
 make run
 ```
 
+or for nixos
+
+```
+git clone https://github.com/shoko3756/eblobs
+cd eblobs
+# enter the shell.nix by doing nix-shell
+make run
+```
+
+
 # WARNING! THIS IS MADE BY AI
