@@ -18,10 +18,25 @@
 
 #include "mime.h"
 
+static bool sock_is_pending(int e) {
+    return e == EINPROGRESS || e == EALREADY;
+}
+static int sock_error() {
+    return errno;
+}
+static int socket_close(int fd) {
+    return ::close(fd);
+}
+static bool set_nonblocking(int fd, bool yes) {
+    int flags = fcntl(fd, F_GETFL, 0);
+    if (flags < 0) return false;
+    return fcntl(fd, F_SETFL, yes ? (flags | O_NONBLOCK) : (flags & ~O_NONBLOCK)) == 0;
+}
+
 namespace {
 
-const int CONNECT_TIMEOUT_S = 30;
-const int IO_TIMEOUT_S = 60;
+const int CONNECT_TIMEOUT_S = 3;
+const int IO_TIMEOUT_S = 3;
 
 std::string ssl_error_str() {
     unsigned long e = ERR_get_error();
@@ -32,15 +47,13 @@ std::string ssl_error_str() {
 
 // Connect to one resolved address with a hard timeout (non-blocking + select).
 bool connect_with_timeout(int fd, const struct sockaddr* sa, socklen_t len, int secs) {
-    int flags = fcntl(fd, F_GETFL, 0);
-    if (flags < 0) return false;
-    if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) != 0) return false;
+    if (!set_nonblocking(fd, true)) return false;
 
     bool ok = false;
-    int rc = ::connect(fd, sa, len);
+    int rc = ::connect(fd, sa, static_cast<int>(len));
     if (rc == 0) {
         ok = true;
-    } else if (errno == EINPROGRESS) {
+    } else if (sock_is_pending(sock_error())) {
         fd_set w;
         FD_ZERO(&w);
         FD_SET(fd, &w);
@@ -54,14 +67,14 @@ bool connect_with_timeout(int fd, const struct sockaddr* sa, socklen_t len, int 
             }
         }
     }
-    if (fcntl(fd, F_SETFL, flags) != 0) ok = false;
+    if (!set_nonblocking(fd, false)) ok = false;
     return ok;
 }
 
 // Whether an SSL failure was caused by our socket read/write timeout.
 bool is_timeout() {
-    errno = errno;
-    return errno == EAGAIN || errno == EWOULDBLOCK;
+    int e = sock_error();
+    return e == EAGAIN || e == EWOULDBLOCK;
 }
 
 std::string imap_quote(const std::string& s) {

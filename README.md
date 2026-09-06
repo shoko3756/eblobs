@@ -51,7 +51,7 @@ cd eblobs
 make run
 ```
 
-~~also currently only supported on linux~~ windows currently in testing
+~~also currently only supported on linux~~ ~~windows currently in testing~~ wont work
 
 
 # WARNING! THIS IS MADE BY AI
