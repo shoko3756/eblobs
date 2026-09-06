@@ -34,4 +34,12 @@ list of email providers that are supported:
 
 also has a shell.nix for nixos
 
+to install you will need gcc, cmake, and openssl
+
+```
+git clone https://github.com/shoko3756/eblobs
+cd eblobs
+make run
+```
+
 # WARNING! THIS IS MADE BY AI
