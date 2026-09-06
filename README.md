@@ -51,5 +51,7 @@ cd eblobs
 make run
 ```
 
+also currently only supported on linux
+
 
 # WARNING! THIS IS MADE BY AI
